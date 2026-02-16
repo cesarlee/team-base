@@ -1,5 +1,36 @@
 # Team Base
 
+A Notion-like collaborative workspace for teams, built as a single HTML file. Create pages, databases with multiple views, and manage projects together.
+
+## Features
+
+### Page Editor
+- Rich text blocks: headings, paragraphs, bulleted/numbered lists, to-dos, toggles, quotes, callouts, code blocks, dividers
+- Inline images and bookmarks
+- Slash command menu (`/`) for quick block insertion
+- Nested pages with sidebar navigation
+- Drag-and-drop block reordering
+- Cover images and page icons
+
+### Databases
+- **Column types:** Text, Number, Select, Multi Select, Date, Checkbox, URL, Email, Phone, Files, Currency, Formula
+- **Formula engine:** Computed columns with expression support
+- **5 view types:**
+  - **Table** — spreadsheet-style rows and columns with inline editing
+  - **Board** — Kanban board grouped by a select property
+  - **List** — simple vertical list of records
+  - **Calendar** — records on a monthly calendar grid
+  - **Gallery** — card-based visual grid layout
+- Filtering, sorting, and column resizing
+- Row and column drag-and-drop reordering
+
+### Workspace
+- Sidebar with page tree and search
+- Trash with configurable retention
+- Dark mode
+- Workspace settings
+- Responsive layout with resizable sidebar
+
 ## Deployment
 
 This project is meant to be deployed on Visimade.
@@ -35,10 +66,10 @@ curl -X PATCH https://www.visimade.com/api/pages/<id> \
 
 ## Agent Spec
 
-Other AI agents can discover and interact with Team Vote programmatically:
+Other AI agents can discover and interact with Team Base programmatically:
 
 ```
-GET https://www.visimade.com/api/pages/343/agent-spec
+GET https://www.visimade.com/api/pages/961/agent-spec
 ```
 
 This returns the full API spec documenting all collections, data models, and CRUD operations.
