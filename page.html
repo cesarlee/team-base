@@ -745,6 +745,23 @@ body.dark .dropdown-panel{background:#252526;border-color:#444}
 
 /* Description panel in type selectors */
 body.dark div[style*="background:#faf9f8"]{background:#2d2d2d!important;border-color:#444!important}
+
+/* Upgrade modal */
+#upgrade-modal .modal{max-width:420px;text-align:center;padding:32px 28px}
+.upgrade-icon{font-size:48px;margin-bottom:16px}
+.upgrade-title{font-size:20px;font-weight:600;color:#323130;margin-bottom:8px}
+.upgrade-msg{font-size:14px;color:#605e5c;margin-bottom:24px;line-height:1.5}
+.upgrade-btn{display:inline-flex;align-items:center;gap:6px;background:#0078d4;color:#fff;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:background 150ms}
+.upgrade-btn:hover{background:#106ebe;text-decoration:none;color:#fff}
+.upgrade-dismiss{display:block;margin-top:12px;font-size:12px;color:#a19f9d;cursor:pointer;background:none;border:none}
+.upgrade-dismiss:hover{color:#605e5c}
+.plan-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;font-weight:600;letter-spacing:0.3px}
+.plan-badge.free{background:#fff3cd;color:#856404}
+.plan-badge.pro{background:#d4edda;color:#155724}
+body.dark .upgrade-title{color:#d4d4d4}
+body.dark .upgrade-msg{color:#aaa}
+body.dark .plan-badge.free{background:#5c4a00;color:#ffe69c}
+body.dark .plan-badge.pro{background:#0a3622;color:#75d6a1}
 </style>
 </head>
 <body data-page-id="{{PAGE_ID}}">
@@ -762,6 +779,9 @@ body.dark div[style*="background:#faf9f8"]{background:#2d2d2d!important;border-c
 </div>
 <div id="record-modal" class="modal-overlay" onclick="if(event.target===this)closeRecordModal()">
   <div class="modal"><div id="record-content"></div></div>
+</div>
+<div id="upgrade-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
+  <div class="modal"><div id="upgrade-content"></div></div>
 </div>
 <div id="add-prop-modal" class="modal-overlay" onclick="if(event.target===this)closeAddPropModal()">
   <div class="modal"><div id="add-prop-content"></div></div>
@@ -868,6 +888,17 @@ const api = {
   async create(col, data) { return TeamData.create(col, data); },
   async update(col, id, data) { return TeamData.update(col, id, data); },
   async delete(col, id) { return TeamData.delete(col, id); }
+};
+
+// ============================================================
+// PLAN LIMITS
+// ============================================================
+const PLAN = {
+  name: 'Free',
+  maxTables: 10,
+  maxRowsPerTable: 100,
+  upgradeUrl: 'https://www.visimade.com/p/team-base-pro/purchase',
+  showUpgrade: true,
 };
 
 // ============================================================
@@ -985,6 +1016,7 @@ function renderSidebar() {
       <button onclick="createNewDatabase()"><i data-lucide="database"></i> New Database</button>
       <button onclick="openTemplates()"><i data-lucide="layout-template"></i> Templates</button>
       <button onclick="showTrash()"><i data-lucide="trash-2"></i> Trash</button>
+      ${PLAN.showUpgrade ? `<div style="padding:6px 8px;margin-top:4px;border-top:1px solid #ddd9d7"><a href="${PLAN.upgradeUrl}" target="_blank" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#0078d4;text-decoration:none"><span class="plan-badge free">FREE</span> Upgrade to Pro</a></div>` : `<div style="padding:6px 8px;margin-top:4px;border-top:1px solid #ddd9d7"><span class="plan-badge pro">PRO</span></div>`}
     </div>
     <div class="sidebar-resize" onmousedown="startSidebarResize(event)"></div>
   `;
@@ -3051,6 +3083,13 @@ async function confirmAddView() {
 async function addNewRecord(pageId, preset) {
   const schema = S.dbSchemas[pageId]?.data;
   if(!schema) return;
+  const rowCount = (S.dbRecords[pageId] || []).filter(r => !r.data.is_archived).length;
+  if(rowCount >= PLAN.maxRowsPerTable) {
+    if(PLAN.showUpgrade) {
+      showUpgradeModal('Row limit reached', `The Free plan supports up to ${PLAN.maxRowsPerTable} rows per table. Upgrade to Pro for up to 10,000 rows per table.`);
+    }
+    return;
+  }
   const values = {};
   schema.properties.forEach(p => {
     if(p.type === 'title') values[p.id] = '';
@@ -4600,6 +4639,13 @@ async function useTemplate(idx) {
 }
 
 async function createNewDatabaseFromTemplate(tpl) {
+  const dbCount = S.pages.filter(p => p.data.page_type === 'database' && !p.data.is_archived).length;
+  if(dbCount >= PLAN.maxTables) {
+    if(PLAN.showUpgrade) {
+      showUpgradeModal('Table limit reached', `The Free plan supports up to ${PLAN.maxTables} tables. Upgrade to Pro for up to 1,000 tables and 10,000 rows per table.`);
+    }
+    return;
+  }
   const schema = JSON.parse(JSON.stringify(tpl.database_schema));
   // Generate new property IDs
   const idMap = {};
@@ -4657,6 +4703,26 @@ function openShare() {
 
 function closeShare() {
   document.getElementById('share-modal').classList.remove('visible');
+}
+
+function showUpgradeModal(title, msg) {
+  const el = document.getElementById('upgrade-modal');
+  document.getElementById('upgrade-content').innerHTML = `
+    <div class="upgrade-icon">🚀</div>
+    <div class="upgrade-title">${title}</div>
+    <div class="upgrade-msg">${msg}</div>
+    <a href="${PLAN.upgradeUrl}" target="_blank" class="upgrade-btn"><i data-lucide="zap" style="width:16px;height:16px"></i> Upgrade to Pro</a>
+    <button class="upgrade-dismiss" onclick="closeUpgradeModal()">Maybe later</button>
+  `;
+  el.style.display = '';
+  el.classList.add('visible');
+  renderIcons(el);
+}
+
+function closeUpgradeModal() {
+  const el = document.getElementById('upgrade-modal');
+  el.classList.remove('visible');
+  el.style.display = 'none';
 }
 
 async function renderShareModal() {
@@ -4757,6 +4823,13 @@ async function createSubPage(parentId) {
 }
 
 async function createNewDatabase() {
+  const dbCount = S.pages.filter(p => p.data.page_type === 'database' && !p.data.is_archived).length;
+  if(dbCount >= PLAN.maxTables) {
+    if(PLAN.showUpgrade) {
+      showUpgradeModal('Table limit reached', `The Free plan supports up to ${PLAN.maxTables} tables. Upgrade to Pro for up to 1,000 tables and 10,000 rows per table.`);
+    }
+    return;
+  }
   const pageData = {
     title:'', icon:'🗃️', page_type:'database',
     content_blocks:[], parent_page_id:null,
