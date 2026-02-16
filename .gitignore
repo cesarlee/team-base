@@ -1,0 +1,21 @@
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+*.secret
+*.token
+
+# Claude Code agent memory (contains credentials)
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Temp files
+*.tmp
+*.log
